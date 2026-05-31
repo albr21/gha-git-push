@@ -1,0 +1,18 @@
+name: 🕹️ Perform GitHub Release
+
+run-name: 🕹️ Perform GitHub Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release 
+    uses: albr21/gha-reusable-workflows/.github/workflows/reusable-perform-github-release.yml@main
+    permissions:
+      contents: write
+    secrets: inherit
