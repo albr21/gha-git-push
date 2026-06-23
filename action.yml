@@ -1,0 +1,175 @@
+name: gha-git-push
+
+description: |-
+  GitHub Action to push files or directories to a Git repository.
+  It enables to commit and push one or more local files/directories.
+  It supports authentication via token, SSH key, or no auth (for public repos).
+
+  The action clones the target repo (shallow), copies the files/directories, and pushes only if
+  the content has changed — avoiding unnecessary commits.
+
+  When a directory is specified, its contents are copied recursively to the destination path.
+
+author: albr21
+branding:
+  icon: git-commit
+  color: blue
+
+inputs:
+  files:
+    description: |-
+      Newline-separated list of file mappings in the format: source:destination
+      Example:
+        - src/file1.txt:dest/file1.txt
+          src/file2.txt:dest/file2.txt
+          src/dir1:dest/dir1
+    required: false
+    default: ""
+  target-repo:
+    description: Target repository in owner/repo format (defaults to current repository)
+    required: false
+    default: ${{ github.repository }}
+  target-branch:
+    description: Target branch to push the files to
+    required: false
+    default: main
+  commit-message:
+    description: Git commit message
+    required: false
+    default: "chore: update files [skip ci]"
+  commit-author-name:
+    description: Git author name
+    required: false
+    default: github-actions[bot]
+  commit-author-email:
+    description: Git author email
+    required: false
+    default: github-actions[bot]@users.noreply.github.com
+  auth-method:
+    description: |-
+      Authentication method: token, ssh, or none
+      When using 'none', the action assumes the target repo is public
+      When using 'token', input 'github-token' is required
+      When using 'ssh', input 'ssh-key' is required,
+                        input 'hosts' or 'known-hosts' is required
+                        input 'ssh-key-types' can be provided
+    required: false
+    default: token
+  github-token:
+    description: |-
+      GitHub token (PAT or GITHUB_TOKEN). Required when auth-method is 'token'
+    required: false
+    default: ""
+  ssh-key:
+    description: |-
+      SSH private key for git operations. Required when auth-method is 'ssh'
+    required: false
+    default: ""
+  hosts:
+    description: |-
+      List of hosts to scan and add to the known_hosts file for SSH authentication.
+      Can be a list of hosts on separate lines.
+
+      This input is used to avoid the need to manually add hosts to the known_hosts file
+      by using `ssh-keyscan`. It is not recommended to use because of the security risks involved.
+      It exposes to a Man-in-the-Middle attack. It is recommended to use the `known-hosts` input instead.
+    required: false
+    default: ""
+  known-hosts:
+    description: |-
+      Content of the known_hosts file for SSH. Used when auth-method is 'ssh'.
+      This is more secure than using the 'hosts' input which relies on ssh-keyscan.
+    required: false
+  ssh-key-types:
+    description: |-
+      Comma-separated list of key types to scan for (e.g., "rsa,ed25519")
+    required: false
+    default: "rsa,ed25519"
+  github-hostname:
+    description: GitHub hostname
+    required: false
+    default: github.com
+  max-retries:
+    description: |-
+      Maximum number of retries for git push operation in case of failure
+      (e.g.due to network issues or rate limiting).
+    required: false
+    default: "3"
+  backoff:
+    description: |-
+      Backoff base time in seconds for exponential backoff between retries for
+      git push operation in case of failure.
+    required: false
+    default: "5"
+  command-line-interpreter:
+    description: |-
+      Command line interpreter.
+      By default, it uses `bash`, but you can change it to `sh`, `powershell`, or any other supported shell if needed.
+    required: false
+    default: bash
+
+outputs:
+  committed:
+    description: |-
+      Commit status, 'true' if a new commit was created, 'false' if all files were unchanged
+    value: ${{ steps.action-script.outputs.committed }}
+  files-count:
+    description: |-
+      Number of files committed
+    value: ${{ steps.action-script.outputs.files_count }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate Inputs
+      uses: albr21/gha-type-guard@1.0.0
+      with:
+        inputs_json: |
+          [
+            {"value": "${{ inputs.files }}", "type": "string"},
+            {"value": "${{ inputs.target-repo }}", "type": "string"},
+            {"value": "${{ inputs.target-branch }}", "type": "string"},
+            {"value": "${{ inputs.commit-message }}", "type": "string"},
+            {"value": "${{ inputs.commit-author-name }}", "type": "string"},
+            {"value": "${{ inputs.commit-author-email }}", "type": "string"},
+            {"value": "${{ inputs.auth-method }}", "type": "enum", "enumValues": ["token", "ssh", "none"]},
+            {"value": "${{ inputs.github-token }}", "type": "string"},
+            {"value": "${{ inputs.ssh-key }}", "type": "string"},
+            {"value": "${{ inputs.hosts }}", "type": "string"},
+            {"value": "${{ inputs.known-hosts }}", "type": "string"},
+            {"value": "${{ inputs.ssh-key-types }}", "type": "string"},
+            {"value": "${{ inputs.github-hostname }}", "type": "string"},
+            {"value": "${{ inputs.max-retries }}", "type": "integer"},
+            {"value": "${{ inputs.backoff }}", "type": "integer"},
+            {"value": "${{ inputs.command-line-interpreter }}", "type": "enum", "enumValues": ["bash", "sh"]}
+          ]
+
+    - name: Set GITHUB_ACTION_PATH variable
+      run: echo "GITHUB_ACTION_PATH=${GITHUB_ACTION_PATH}" >> $GITHUB_ENV
+      shell: ${{ inputs.command-line-interpreter }}
+
+    - name: Setup SSH Agent
+      if: ${{ inputs.auth-method == 'ssh' }}
+      uses: albr21/gha-ssh-agent@1.0.0
+      with:
+        ssh-key: ${{ inputs.ssh-key }}
+        hosts: ${{ inputs.hosts }}
+        known-hosts: ${{ inputs.known-hosts }}
+        ssh-key-types: ${{ inputs.ssh-key-types }}
+
+    - name: Commit and Push
+      id: action-script
+      run: |-
+        ${{ inputs.command-line-interpreter }} ${{ env.GITHUB_ACTION_PATH }}/scripts/main.sh \
+          --files "${{ inputs.files }}" \
+          --target-repo "${{ inputs.target-repo }}" \
+          --target-branch "${{ inputs.target-branch }}" \
+          --commit-message "${{ inputs.commit-message }}" \
+          --commit-author-name "${{ inputs.commit-author-name }}" \
+          --commit-author-email "${{ inputs.commit-author-email }}" \
+          --auth-method "${{ inputs.auth-method }}" \
+          --github-token "${{ inputs.github-token }}" \
+          --github-hostname "${{ inputs.github-hostname }}" \
+          --max-retries "${{ inputs.max-retries }}" \
+          --backoff "${{ inputs.backoff }}"
+      shell: ${{ inputs.command-line-interpreter }}
