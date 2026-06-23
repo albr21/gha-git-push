@@ -25,7 +25,7 @@ while [ "$#" -gt 0 ]; do
     --github-hostname) GITHUB_HOSTNAME="$2"; shift 2 ;;
     --max-retries) MAX_RETRIES="${2:-$MAX_RETRIES}"; shift 2 ;;
     --backoff) BACKOFF="${2:-$BACKOFF}"; shift 2 ;;
-    \?) echo "Error: Invalid options $1" >&2; exit 1 ;;
+    \?) echo "::error::Invalid options $1" >&2; exit 1 ;;
   esac
 done
 
