@@ -1,10 +1,28 @@
-# <project-name>
+# gha-git-push
 
-<!-- A brief description of the project. -->
+A GitHub Action to push files or directories to a Git repository.
 
 ## Usage
 
-<!-- Provide instructions on how to use the project, including code examples if applicable. -->
+```yaml
+steps:
+  - name: Push files
+    uses: gha-git-push@v1
+    with:
+      files: |-
+        src/file1.txt:dest/file1.txt
+        src/file2.txt:dest/file2.txt
+        src/dir:dest/dir
+      target-repo: owner/repo
+      target-branch: main
+      commit-message: "Add files"
+      commit-author-name: "github-actions[bot]"
+      commit-author-email: "github-actions[bot]@users.noreply.github.com"
+      auth-method: token
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+      max-retries: 3
+      backoff-base: 5
+```
 
 ## Contributing
 

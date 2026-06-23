@@ -1,0 +1,22 @@
+name: 🤖 GHA Quality
+
+run-name: 🤖 GHA Quality
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    name: GHA Quality
+    uses: albr21/gha-reusable-workflows/.github/workflows/reusable-gha-quality.yml@main
+    secrets: inherit

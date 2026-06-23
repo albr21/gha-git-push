@@ -1,8 +1,11 @@
-name: <project-name>
+name: gha-git-push
 description: |-
-  <project-description>
-version: 0.0.0
+  GitHub Action to push files or directories to a Git repository
+version: 1.0.0
 releases:
+  - version: 1.0.0
+    changes:
+      - Initial release
   - version: 0.0.0
     changes:
       - Under development
