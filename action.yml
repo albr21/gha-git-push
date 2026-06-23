@@ -124,7 +124,7 @@ runs:
     - name: Validate Inputs
       uses: albr21/gha-type-guard@1.0.0
       with:
-        inputs_json: |
+        payload: |
           [
             {"value": "${{ inputs.files }}", "type": "string"},
             {"value": "${{ inputs.target-repo }}", "type": "string"},
