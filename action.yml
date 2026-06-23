@@ -104,7 +104,7 @@ inputs:
   command-line-interpreter:
     description: |-
       Command line interpreter.
-      By default, it uses `bash`, but you can change it to `sh`, `powershell`, or any other supported shell if needed.
+      By default, it uses `bash`, but you can change it to `sh`.
     required: false
     default: bash
 
